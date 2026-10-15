@@ -29,12 +29,28 @@ class Command(BaseCommand):
 
     def add_arguments(self, p):
         p.add_argument("--with-orders", action="store_true")
+        p.add_argument(
+            "--public-demo",
+            action="store_true",
+            help="Disable login for the demo accounts while seeding public demo listings.",
+        )
 
     def handle(self, *a, **o):
-        priya, c = User.objects.get_or_create(username="Priya", defaults={"user_type": "seller"})
-        if c: priya.set_password("secret123"); priya.save()
-        arjun, c = User.objects.get_or_create(username="Arjun", defaults={"user_type": "student"})
-        if c: arjun.set_password("secret123"); arjun.save()
+        priya, created = User.objects.get_or_create(username="Priya", defaults={"user_type": "seller"})
+        if o["public_demo"]:
+            priya.set_unusable_password()
+            priya.save(update_fields=["password"])
+        elif created:
+            priya.set_password("secret123")
+            priya.save()
+
+        arjun, created = User.objects.get_or_create(username="Arjun", defaults={"user_type": "student"})
+        if o["public_demo"]:
+            arjun.set_unusable_password()
+            arjun.save(update_fields=["password"])
+        elif created:
+            arjun.set_password("secret123")
+            arjun.save()
 
         rnd, n = random.Random(7), 0
         for cat, (names, (lo, hi)) in DATA.items():
