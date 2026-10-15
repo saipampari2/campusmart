@@ -1,0 +1,38 @@
+services:
+  backend:
+    image: ${BACKEND_IMAGE:-campusmart-backend:local}
+    build:
+      context: ./backend
+    env_file:
+      - .env
+    environment:
+      DJANGO_DB_PATH: /app/data/db.sqlite3
+    volumes:
+      - campusmart-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/listings/', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-campusmart-frontend:local}
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ""
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  campusmart-data:
