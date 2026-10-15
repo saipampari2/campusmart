@@ -14,6 +14,6 @@ RUN useradd --create-home --uid 10001 appuser \
     && chown -R appuser:appuser /app
 
 USER appuser
-EXPOSE 8000
+EXPOSE 10000
 
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 --workers 3 --access-logfile - --error-logfile - config.wsgi:application"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 3 --access-logfile - --error-logfile - config.wsgi:application"]

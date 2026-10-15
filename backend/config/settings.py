@@ -7,7 +7,11 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-secret-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes")
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    for host in (
+        os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
+        + ("," + os.environ["RENDER_EXTERNAL_HOSTNAME"] if os.environ.get("RENDER_EXTERNAL_HOSTNAME") else "")
+        + ("," + os.environ.get("DJANGO_PROXY_ALLOWED_HOSTS", ""))
+    ).split(",")
     if host.strip()
 ]
 

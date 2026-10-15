@@ -34,6 +34,7 @@ campusmart-fullstack/
 ├── Jenkinsfile                  # Jenkins build, ECR push, and EC2 deployment pipeline
 ├── Makefile                     # Local Docker Compose helper commands
 ├── docker-compose.yml           # Frontend and backend services with persistent SQLite volume
+├── render.yaml                  # Render web services and SQLite persistent disk
 ├── .env.example                 # Environment variable template; copy to .env and set a secret
 ├── backend/
 │   ├── Dockerfile
@@ -167,6 +168,21 @@ docker compose up --build
 Open `http://localhost`. The frontend container also proxies `/api/`, `/admin/`, and `/static/` to Django, so the browser uses the same origin for the API. The backend applies migrations and collects static files when it starts. SQLite data persists in the `campusmart-data` Docker volume. To stop the services, run `docker compose down`; the named data volume is retained. **Do not run `docker compose down --volumes` unless you intend to delete that database.**
 
 Equivalent Makefile shortcuts include `make up`, `make down`, `make logs`, `make check`, and `make seed`. `make seed` is for development only; it creates the documented demo accounts and sample data.
+
+## Deploy to Render
+
+The root [render.yaml](./render.yaml) defines the backend and frontend as Docker-based Render web services in the Singapore region. The backend uses SQLite on a 1 GB persistent disk, and the frontend proxies API, admin, and static-file requests to the backend. This keeps API calls same-origin and avoids browser CORS configuration. The blueprint assigns both web services the Starter plan; a persistent disk requires a paid web service. Review the current Render pricing before deploying.
+
+To deploy:
+
+1. Push the project to GitHub (the current repository is `saipampari2/campusmart`, branch `main`).
+2. Sign in to Render and select **New → Blueprint**.
+3. Connect the GitHub repository and choose the `main` branch. Render reads `render.yaml`; review the services, region, plans, and disk before confirming creation.
+4. After the services finish deploying, open the frontend service URL. Render automatically provides HTTPS.
+
+Render generates `DJANGO_SECRET_KEY` for the API service. The SQLite database lives at `/var/data/db.sqlite3` on the persistent disk, so data survives redeploys. Back up that disk and avoid scaling the API to multiple instances; SQLite with a Render disk is intended for a small single-instance deployment. The backend migration runs on service startup. Do not run the demo seed command on a public deployment, because it creates predictable demo credentials.
+
+Render Git integration deploys new commits to `main` automatically after the Blueprint is connected. Check the Render dashboard for build/deploy status and provide the public frontend URL to users when deployment succeeds.
 
 ## Deploy to AWS EC2 with Jenkins CI/CD
 

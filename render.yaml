@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: campusmart-api
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/listings/
+    disk:
+      name: campusmart-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: localhost,127.0.0.1
+      - key: DJANGO_DB_PATH
+        value: /var/data/db.sqlite3
+      - key: DJANGO_PROXY_ALLOWED_HOSTS
+        fromService:
+          name: campusmart-web
+          type: web
+          property: host
+
+  - type: web
+    name: campusmart-web
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    healthCheckPath: /
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: ""
+      - key: BACKEND_UPSTREAM
+        value: http://campusmart-api:10000
