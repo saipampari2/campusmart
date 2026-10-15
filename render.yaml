@@ -5,8 +5,8 @@ services:
     plan: free
     region: singapore
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:$PORT --workers 3 --access-logfile - --error-logfile - config.wsgi:application
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: python manage.py migrate --noinput && gunicorn --bind 0.0.0.0:$PORT --workers 1 --access-logfile - --error-logfile - config.wsgi:application
     healthCheckPath: /api/listings/
     envVars:
       - key: DJANGO_SECRET_KEY
