@@ -1,11 +1,12 @@
 services:
   - type: web
     name: campusmart-api
-    runtime: docker
+    runtime: python
     plan: free
     region: singapore
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:$PORT --workers 3 --access-logfile - --error-logfile - config.wsgi:application
     healthCheckPath: /api/listings/
     envVars:
       - key: DJANGO_SECRET_KEY
@@ -15,4 +16,4 @@ services:
       - key: DJANGO_ALLOWED_HOSTS
         value: localhost,127.0.0.1
       - key: DJANGO_DB_PATH
-        value: /app/data/db.sqlite3
+        value: /tmp/campusmart.sqlite3
