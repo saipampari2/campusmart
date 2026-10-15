@@ -1,4 +1,4 @@
-import {Link, Navigate, Outlet, Route, Routes, useNavigate} from 'react-router'
+import {Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate} from 'react-router'
 import {getAccessToken} from './api'
 import {useApp} from './context'
 import Home from './pages/Home'
@@ -9,7 +9,12 @@ import {Cart, Checkout} from './pages/CartCheckout'
 import {Orders, OrderDetail} from './pages/Orders'
 import {Dashboard, MyListings, ListingForm, SellerOrders} from './pages/Seller'
 
-const Protected = () => (getAccessToken() === undefined ? <Navigate to="/login" replace /> : <Outlet />)
+const Protected = () => {
+  const location = useLocation()
+  return getAccessToken() === undefined
+    ? <Navigate to="/login" replace state={{from: location.pathname}} />
+    : <Outlet />
+}
 
 function Layout() {
   const {loggedIn, logout, cart} = useApp()

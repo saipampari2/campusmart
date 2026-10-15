@@ -1,5 +1,5 @@
 import {useState} from 'react'
-import {Link, useNavigate} from 'react-router'
+import {Link, useLocation, useNavigate} from 'react-router'
 import {apiFetch, getErrorMessage} from '../api'
 import {useApp} from '../context'
 
@@ -8,13 +8,14 @@ export function Login() {
   const [error, setError] = useState('')
   const {login} = useApp()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const submit = async e => {
     e.preventDefault()
     setError('')
     const res = await apiFetch('/api/users/login/', {method: 'POST', body: JSON.stringify(f)})
     const data = await res.json()
-    if (res.ok) { login(data); navigate('/listings') } else setError(getErrorMessage(data))
+    if (res.ok) { login(data); navigate(location.state?.from || '/listings', {replace: true}) } else setError(getErrorMessage(data))
   }
   return (
     <form className="card form" onSubmit={submit}>
@@ -29,9 +30,14 @@ export function Login() {
 }
 
 export function Register() {
-  const [f, setF] = useState({username: '', email: '', password: '', confirmPassword: '', user_type: 'student'})
   const [error, setError] = useState('')
   const navigate = useNavigate()
+  const location = useLocation()
+  const initialType = new URLSearchParams(location.search).get('type')
+  const [f, setF] = useState({
+    username: '', email: '', password: '', confirmPassword: '',
+    user_type: initialType === 'seller' ? 'seller' : 'student',
+  })
   const set = k => e => setF({...f, [k]: e.target.value})
 
   const submit = async e => {
@@ -41,7 +47,7 @@ export function Register() {
     const {confirmPassword, ...body} = f
     const res = await apiFetch('/api/users/register/', {method: 'POST', body: JSON.stringify(body)})
     const data = await res.json()
-    if (res.ok) navigate('/login')
+    if (res.ok) navigate('/login', {state: location.state})
     else setError(getErrorMessage(data))
   }
   return (

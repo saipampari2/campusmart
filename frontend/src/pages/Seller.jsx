@@ -5,12 +5,41 @@ import {useApi} from '../hooks'
 import {money} from './Listings'
 import {Badge} from './Orders'
 
-const Forbidden = () => <p className="error">Only seller accounts can use this screen. Log in as Priya to try it.</p>
+const SellerAccess = () => (
+  <section className="seller-gate card" aria-labelledby="seller-gate-title">
+    <div className="seller-gate-copy">
+      <p className="seller-eyebrow">CAMPUSMART SELLER WORKSPACE</p>
+      <h2 id="seller-gate-title">Make your next sale on campus</h2>
+      <p className="seller-gate-intro">
+        Create a seller account to publish listings, manage orders, and keep track of your sales.
+      </p>
+      <div className="seller-gate-actions">
+        <Link className="btn" to="/register?type=seller" state={{from: '/seller'}}>
+          Create a seller account
+        </Link>
+        <Link className="btn seller-secondary" to="/login" state={{from: '/seller'}}>
+          Already a seller? Sign in
+        </Link>
+      </div>
+      <p className="seller-gate-note">
+        Your student account can still be used to browse and shop.
+      </p>
+    </div>
+    <div className="seller-gate-panel" aria-label="Seller workspace features">
+      <p className="seller-panel-heading">Your seller toolkit</p>
+      <ul>
+        <li><span aria-hidden="true">01</span><div><b>Publish listings</b><small>Show your items to students</small></div></li>
+        <li><span aria-hidden="true">02</span><div><b>Manage orders</b><small>Keep every handover on track</small></div></li>
+        <li><span aria-hidden="true">03</span><div><b>Track sales</b><small>See activity from one place</small></div></li>
+      </ul>
+    </div>
+  </section>
+)
 
 export function Dashboard() {
   const {data: d, status, loading} = useApi('/api/seller/dashboard/')
   if (loading) return <p>Loading...</p>
-  if (status === 403) return <Forbidden />
+  if (status === 401 || status === 403) return <SellerAccess />
   if (!d) return <p>Could not load the dashboard.</p>
   const max = Math.max(1, ...d.last_7_days.map(x => x.items))
   return (
@@ -58,7 +87,7 @@ export function MyListings() {
     const res = await apiFetch(`/api/listings/${id}/`, {method: 'DELETE'})
     if (res.status === 204) reload()
   }
-  if (status === 403) return <Forbidden />
+  if (status === 401 || status === 403) return <SellerAccess />
   return (
     <div>
       <h2>My Listings</h2>
@@ -136,7 +165,7 @@ export function SellerOrders() {
   const [page, setPage] = useState(1)
   const {data, status, loading, reload} = useApi(`/api/seller/orders/?page=${page}`)
   const advance = async id => { await apiFetch(`/api/seller/orders/${id}/status/`, {method: 'PATCH'}); reload() }
-  if (status === 403) return <Forbidden />
+  if (status === 401 || status === 403) return <SellerAccess />
   if (loading) return <p>Loading...</p>
   return (
     <div>
