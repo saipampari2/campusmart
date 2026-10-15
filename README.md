@@ -34,7 +34,7 @@ campusmart-fullstack/
 ├── Jenkinsfile                  # Jenkins build, ECR push, and EC2 deployment pipeline
 ├── Makefile                     # Local Docker Compose helper commands
 ├── docker-compose.yml           # Frontend and backend services with persistent SQLite volume
-├── render.yaml                  # Render web services and SQLite persistent disk
+├── render.yaml                  # Render backend API (free demo setup)
 ├── .env.example                 # Environment variable template; copy to .env and set a secret
 ├── backend/
 │   ├── Dockerfile
@@ -51,6 +51,7 @@ campusmart-fullstack/
 └── frontend/
     ├── Dockerfile
     ├── .dockerignore
+    ├── vercel.json              # Vercel SPA route fallback
     ├── nginx.conf               # Serves the SPA and proxies API/admin requests
     ├── package.json
     ├── vite.config.js
@@ -169,20 +170,29 @@ Open `http://localhost`. The frontend container also proxies `/api/`, `/admin/`,
 
 Equivalent Makefile shortcuts include `make up`, `make down`, `make logs`, `make check`, and `make seed`. `make seed` is for development only; it creates the documented demo accounts and sample data.
 
-## Deploy to Render
+## Deploy frontend to Vercel and backend to Render
 
-The root [render.yaml](./render.yaml) defines the backend and frontend as Docker-based Render web services in the Singapore region. The backend uses SQLite on a 1 GB persistent disk, and the frontend proxies API, admin, and static-file requests to the backend. This keeps API calls same-origin and avoids browser CORS configuration. The blueprint assigns both web services the Starter plan; a persistent disk requires a paid web service. Review the current Render pricing before deploying.
+The root [render.yaml](./render.yaml) defines only the Django API on Render's Free plan in Singapore. Deploy the React/Vite frontend separately to Vercel.
 
-To deploy:
+### Deploy the backend to Render
 
 1. Push the project to GitHub (the current repository is `saipampari2/campusmart`, branch `main`).
-2. Sign in to Render and select **New → Blueprint**.
-3. Connect the GitHub repository and choose the `main` branch. Render reads `render.yaml`; review the services, region, plans, and disk before confirming creation.
-4. After the services finish deploying, open the frontend service URL. Render automatically provides HTTPS.
+2. In Render, choose **New → Blueprint**, connect the repository, and select `main`. Render reads the root `render.yaml` and creates the `campusmart-api` service.
+3. Wait for the service to become live and copy its public URL, for example `https://campusmart-api.onrender.com`.
 
-Render generates `DJANGO_SECRET_KEY` for the API service. The SQLite database lives at `/var/data/db.sqlite3` on the persistent disk, so data survives redeploys. Back up that disk and avoid scaling the API to multiple instances; SQLite with a Render disk is intended for a small single-instance deployment. The backend migration runs on service startup. Do not run the demo seed command on a public deployment, because it creates predictable demo credentials.
+Render generates `DJANGO_SECRET_KEY`. The SQLite database lives on the Free service's ephemeral filesystem. **Database data is lost when the service restarts, spins down, or redeploys**, so this setup is only for demos and testing, not production. Free web services can spin down after 15 minutes without inbound traffic, and the first request after that can take about a minute to start. Do not run the demo seed command on a public deployment, because it creates predictable demo credentials.
 
-Render Git integration deploys new commits to `main` automatically after the Blueprint is connected. Check the Render dashboard for build/deploy status and provide the public frontend URL to users when deployment succeeds.
+### Deploy the frontend to Vercel
+
+1. In Vercel, choose **Add New → Project**, import `saipampari2/campusmart`, and select the `main` branch.
+2. Set **Root Directory** to `frontend`.
+3. Use the Vite framework preset, build command `npm run build`, and output directory `dist`.
+4. Add the environment variable `VITE_API_BASE_URL` with the Render backend URL, with no trailing slash (for example, `https://campusmart-api.onrender.com`).
+5. Deploy and copy the generated Vercel URL.
+6. In Render's `campusmart-api` **Environment** settings, add `DJANGO_CORS_ALLOWED_ORIGINS` with the exact Vercel origin (for example, `https://campusmart.vercel.app`, without a trailing slash). Save the change and let Render redeploy.
+7. Open the Vercel URL and confirm that listing data loads and sign-in works.
+
+The `frontend/vercel.json` rewrite serves the React app entry point on direct navigation to client-side routes. After a frontend update on `main`, Vercel deploys it automatically; Render deploys the backend when its configuration or backend source changes.
 
 ## Deploy to AWS EC2 with Jenkins CI/CD
 
